@@ -5,8 +5,8 @@ const fs = require('fs');
 
 // ========== CONFIGURACIÓN ==========
 const CONFIG = {
-    telegramToken: '8508871696:AAHVgoFh-vecqUZ_wcpplSy2pcQjMMs7cJg', // ⚠️ Obtener de @BotFather
-    chatId: '6569332546', // ⚠️ ID del grupo o chat
+    telegramToken: '8508871696:AAHVgoFh-vecqUZ_wcpplSy2pcQjMMs7cJg',
+    chatId: '6569332546',
     microsoftEmail: 'jakob.ponce@unach.edu.ec',
     microsoftPass: 'Sebas2104',
     moodleUrl: 'https://moodle.unach.edu.ec',
@@ -440,20 +440,29 @@ function formatearMensajeNuevas(tareasNuevas) {
 }
 
 // ========== COMANDOS DE TELEGRAM ==========
+
+// Comando /start - Bienvenida mejorada
 bot.onText(/\/start/, (msg) => {
     const chatId = msg.chat.id;
     bot.sendMessage(chatId,
-        `🤖 <b>Bot Moodle UNACH</b>\n\n` +
-        `Comandos disponibles:\n` +
-        `/tareas - Ver tus deberes\n` +
-        `/actualizar - Actualizar ahora\n` +
-        `/ayuda - Ayuda\n\n` +
-        `<b>Chat ID:</b> <code>${chatId}</code>\n` +
-        `Copia este ID y ponlo en CONFIG.chatId`,
+        `👋 <b>¡Bienvenido al Bot de Moodle UNACH!</b>\n\n` +
+        `🎓 Este bot te ayuda a mantenerte al día con tus deberes universitarios.\n\n` +
+        `📋 <b>Estos son los comandos que puedes utilizar:</b>\n\n` +
+        `📚 /tareas - <i>Ver todos tus deberes pendientes</i>\n` +
+        `🔄 /actualizar - <i>Actualizar el servicio y buscar nuevos deberes</i>\n` +
+        `🔥 /urgentes - <i>Ver solo deberes urgentes (hoy y mañana)</i>\n` +
+        `📅 /proximos - <i>Ver deberes de esta semana</i>\n` +
+        `❌ /vencidos - <i>Ver deberes que ya pasaron de fecha</i>\n` +
+        `ℹ️ /estado - <i>Ver estado del bot y última actualización</i>\n` +
+        `❓ /ayuda - <i>Servicio de ayuda y soporte</i>\n\n` +
+        `━━━━━━━━━━━━━━━━━\n` +
+        `💡 <b>Tip:</b> El bot se actualiza automáticamente cada 15 minutos y te notifica cuando hay nuevos deberes.\n\n` +
+        `<b>Chat ID:</b> <code>${chatId}</code>`,
         { parse_mode: 'HTML' }
     );
 });
 
+// Comando /tareas - Ver todos los deberes
 bot.onText(/\/tareas/, async (msg) => {
     const chatId = msg.chat.id;
     await bot.sendMessage(chatId, formatearMensajeTareas(tareasActuales), {
@@ -462,9 +471,10 @@ bot.onText(/\/tareas/, async (msg) => {
     });
 });
 
+// Comando /actualizar - Actualizar manualmente
 bot.onText(/\/actualizar/, async (msg) => {
     const chatId = msg.chat.id;
-    await bot.sendMessage(chatId, '🔄 Actualizando...');
+    await bot.sendMessage(chatId, '🔄 Actualizando el servicio...');
 
     try {
         await actualizarTareas();
@@ -477,13 +487,146 @@ bot.onText(/\/actualizar/, async (msg) => {
     }
 });
 
+// Comando /urgentes - Solo deberes urgentes
+bot.onText(/\/urgentes/, async (msg) => {
+    const chatId = msg.chat.id;
+    const urgentes = tareasActuales.filter(t => t.estado === 'Urgente');
+    
+    if (urgentes.length === 0) {
+        await bot.sendMessage(chatId, 
+            '✅ <b>¡Genial!</b>\n\nNo tienes deberes urgentes por ahora 😊', 
+            { parse_mode: 'HTML' }
+        );
+        return;
+    }
+
+    let mensaje = '🔥 <b>DEBERES URGENTES</b>\n\n';
+    urgentes.forEach(t => {
+        let textoTiempo = t.diasRestantes === 0 ? 
+            `Tienes que entregar <b>HOY</b> hasta las ${t.hora}` : 
+            `Tienes que entregar <b>MAÑANA</b> hasta las ${t.hora}`;
+        
+        mensaje += `🔥 <b>${t.nombre}</b>\n`;
+        mensaje += `   Materia: ${t.materia}\n`;
+        mensaje += `   ${textoTiempo}\n`;
+        mensaje += `   <a href="${t.url}">Ver en Moodle</a>\n\n`;
+    });
+
+    await bot.sendMessage(chatId, mensaje, {
+        parse_mode: 'HTML',
+        disable_web_page_preview: true
+    });
+});
+
+// Comando /proximos - Deberes de esta semana
+bot.onText(/\/proximos/, async (msg) => {
+    const chatId = msg.chat.id;
+    const proximos = tareasActuales.filter(t => 
+        t.estado === 'Próximo' || t.estado === 'Esta semana' || t.estado === 'Pendiente'
+    );
+    
+    if (proximos.length === 0) {
+        await bot.sendMessage(chatId, 
+            '✅ <b>¡Todo listo!</b>\n\nNo tienes deberes próximos 🎉', 
+            { parse_mode: 'HTML' }
+        );
+        return;
+    }
+
+    let mensaje = '📅 <b>PRÓXIMOS DEBERES</b>\n\n';
+    proximos.forEach(t => {
+        let emoji = t.estado === 'Próximo' ? '⚠️' : '📌';
+        mensaje += `${emoji} <b>${t.nombre}</b>\n`;
+        mensaje += `   Materia: ${t.materia}\n`;
+        mensaje += `   Entregar: <b>${t.fecha}</b> a las ${t.hora}\n`;
+        mensaje += `   Faltan: ${t.tiempoRestante}\n`;
+        mensaje += `   <a href="${t.url}">Ver en Moodle</a>\n\n`;
+    });
+
+    await bot.sendMessage(chatId, mensaje, {
+        parse_mode: 'HTML',
+        disable_web_page_preview: true
+    });
+});
+
+// Comando /vencidos - Deberes vencidos
+bot.onText(/\/vencidos/, async (msg) => {
+    const chatId = msg.chat.id;
+    const vencidos = tareasActuales.filter(t => t.estado === 'Vencido');
+    
+    if (vencidos.length === 0) {
+        await bot.sendMessage(chatId, 
+            '✅ <b>¡Excelente!</b>\n\nNo tienes deberes vencidos 👏', 
+            { parse_mode: 'HTML' }
+        );
+        return;
+    }
+
+    let mensaje = `❌ <b>DEBERES VENCIDOS (${vencidos.length})</b>\n\n`;
+    vencidos.forEach(t => {
+        mensaje += `⏰ <b>${t.nombre}</b>\n`;
+        mensaje += `   Materia: ${t.materia}\n`;
+        mensaje += `   ${t.tiempoRestante}\n`;
+        mensaje += `   <a href="${t.url}">Ver en Moodle</a>\n\n`;
+    });
+
+    await bot.sendMessage(chatId, mensaje, {
+        parse_mode: 'HTML',
+        disable_web_page_preview: true
+    });
+});
+
+// Comando /estado - Estado del bot
+bot.onText(/\/estado/, async (msg) => {
+    const chatId = msg.chat.id;
+    
+    const urgentes = tareasActuales.filter(t => t.estado === 'Urgente').length;
+    const proximos = tareasActuales.filter(t => 
+        t.estado === 'Próximo' || t.estado === 'Esta semana'
+    ).length;
+    const vencidos = tareasActuales.filter(t => t.estado === 'Vencido').length;
+    
+    const ultimaAct = ultimaActualizacion ? 
+        new Date(ultimaActualizacion).toLocaleString('es-EC') : 
+        'Nunca';
+
+    let mensaje = `ℹ️ <b>ESTADO DEL BOT</b>\n\n`;
+    mensaje += `🟢 Bot activo y funcionando\n\n`;
+    mensaje += `📊 <b>Resumen de deberes:</b>\n`;
+    mensaje += `   🔥 Urgentes: ${urgentes}\n`;
+    mensaje += `   📌 Próximos: ${proximos}\n`;
+    mensaje += `   ❌ Vencidos: ${vencidos}\n`;
+    mensaje += `   📚 Total: ${tareasActuales.length}\n\n`;
+    mensaje += `🕐 <b>Última actualización:</b>\n   ${ultimaAct}\n\n`;
+    mensaje += `⚙️ <b>Configuración:</b>\n`;
+    mensaje += `   • Actualización automática: Cada 15 min\n`;
+    mensaje += `   • Recordatorio matutino: 8:00 AM`;
+
+    await bot.sendMessage(chatId, mensaje, { parse_mode: 'HTML' });
+});
+
+// Comando /ayuda - Servicio de ayuda
 bot.onText(/\/ayuda/, (msg) => {
     const chatId = msg.chat.id;
     bot.sendMessage(chatId,
-        `🤖 <b>COMANDOS</b>\n\n` +
-        `/tareas - Ver tus deberes\n` +
-        `/actualizar - Actualizar ahora\n` +
-        `/ayuda - Esta ayuda`,
+        `❓ <b>SERVICIO DE AYUDA</b>\n\n` +
+        `<b>Comandos disponibles:</b>\n\n` +
+        `📚 /tareas - Ver todos tus deberes\n` +
+        `🔄 /actualizar - Actualizar el servicio ahora\n` +
+        `🔥 /urgentes - Ver solo deberes urgentes\n` +
+        `📅 /proximos - Ver deberes próximos\n` +
+        `❌ /vencidos - Ver deberes vencidos\n` +
+        `ℹ️ /estado - Ver estado del bot\n` +
+        `❓ /ayuda - Esta ayuda\n\n` +
+        `━━━━━━━━━━━━━━━━━\n\n` +
+        `<b>¿Cómo funciona?</b>\n` +
+        `• El bot revisa Moodle cada 15 minutos\n` +
+        `• Te notifica cuando hay nuevos deberes\n` +
+        `• Recibes un recordatorio diario a las 8 AM\n\n` +
+        `<b>¿Problemas?</b>\n` +
+        `Si el bot no responde, prueba usar /actualizar para forzar una actualización.\n\n` +
+        `<b>Contacto:</b>\n` +
+        `Para soporte técnico, contacta al administrador del bot.`,
         { parse_mode: 'HTML' }
     );
 });
@@ -520,7 +663,7 @@ function programarRecordatorios() {
             const proximos = tareasActuales.filter(t => t.estado === 'Próximo');
 
             if (vencidos.length > 0 || urgentes.length > 0 || proximos.length > 0) {
-                let mensaje = '☀️ <b>Buenos días!</b>\n\n';
+                let mensaje = '☀️ <b>¡Buenos días!</b>\n\n';
                 mensaje += '📌 Recordatorio de tus deberes:\n\n';
 
                 if (urgentes.length > 0) {
