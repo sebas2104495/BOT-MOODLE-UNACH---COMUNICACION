@@ -59,8 +59,7 @@ async function obtenerTareasDeMoodle() {
             '--disable-gpu',
             '--disable-software-rasterizer',
             '--disable-extensions'
-        ],
-        executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || '/usr/bin/chromium-browser'
+        ]
     });
 
     try {
