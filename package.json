@@ -5,9 +5,7 @@
   "main": "bot-telegram.js",
   "scripts": {
     "start": "node bot-telegram.js",
-    "build": "npm install && npx puppeteer browsers install chrome",
-    "postinstall": "npx puppeteer browsers install chrome",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "build": "npm install && npx puppeteer browsers install chrome"
   },
   "keywords": ["telegram", "bot", "moodle", "unach"],
   "author": "",
@@ -16,6 +14,6 @@
   "dependencies": {
     "node-schedule": "^2.1.1",
     "node-telegram-bot-api": "^0.66.0",
-    "puppeteer": "^24.30.0"
+    "puppeteer": "^23.9.0"
   }
 }
