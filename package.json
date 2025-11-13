@@ -7,7 +7,7 @@
     "start": "node bot-telegram.js",
     "build": "npm install && npx puppeteer browsers install chrome"
   },
-  "keywords": ["telegram", "bot", "moodle", "unach"],
+  "keywords": [],
   "author": "",
   "license": "ISC",
   "type": "commonjs",
