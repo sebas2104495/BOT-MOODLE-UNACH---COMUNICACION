@@ -1,14 +1,15 @@
 {
   "name": "bot-telegram-moodle",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "description": "Bot de Telegram para Moodle UNACH",
+  "main": "bot-telegram.js",
   "scripts": {
     "start": "node bot-telegram.js",
     "build": "npm install && npx puppeteer browsers install chrome",
+    "postinstall": "npx puppeteer browsers install chrome",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "keywords": [],
+  "keywords": ["telegram", "bot", "moodle", "unach"],
   "author": "",
   "license": "ISC",
   "type": "commonjs",
