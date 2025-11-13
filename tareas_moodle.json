@@ -1,0 +1,60 @@
+{
+  "tareas": [
+    {
+      "materia": "C4-S-C-EXPRESIÓN ORAL Y ESCRITA-CD",
+      "nombre": "Foro Avalancha de la Información (APE)",
+      "fecha": "30 de octubre de 2025",
+      "hora": "23:59",
+      "fechaISO": "2025-10-31T04:59:00.000Z",
+      "tiempoRestante": "Vencido hace 14d",
+      "diasRestantes": -14,
+      "estado": "Vencido",
+      "url": "https://moodle.unach.edu.ec/mod/forum/view.php?id=259021"
+    },
+    {
+      "materia": "C4-S-C-SOCIEDAD Y CULTURA-CD",
+      "nombre": "Foro: Ecuador un país plurinacional y multiétnico",
+      "fecha": "5 de noviembre de 2025",
+      "hora": "22:10",
+      "fechaISO": "2025-11-06T03:10:00.000Z",
+      "tiempoRestante": "Vencido hace 8d",
+      "diasRestantes": -8,
+      "estado": "Vencido",
+      "url": "https://moodle.unach.edu.ec/mod/forum/view.php?id=273780"
+    },
+    {
+      "materia": "C4-S-C-EXPRESIÓN ORAL Y ESCRITA-CD",
+      "nombre": "Foro texto de 4 párrafos",
+      "fecha": "7 de noviembre de 2025",
+      "hora": "23:59",
+      "fechaISO": "2025-11-08T04:59:00.000Z",
+      "tiempoRestante": "Vencido hace 6d",
+      "diasRestantes": -6,
+      "estado": "Vencido",
+      "url": "https://moodle.unach.edu.ec/mod/forum/view.php?id=291707"
+    },
+    {
+      "materia": "C4-S-C-MATEMÁTICA Y ESTADÍSTICA-CD",
+      "nombre": "Tarea Autónoma N°7",
+      "fecha": "13 de noviembre de 2025",
+      "hora": "23:00",
+      "fechaISO": "2025-11-14T04:00:00.000Z",
+      "tiempoRestante": "Vence HOY (7h 56min)",
+      "diasRestantes": 0,
+      "estado": "Urgente",
+      "url": "https://moodle.unach.edu.ec/mod/assign/view.php?id=294811"
+    },
+    {
+      "materia": "C4-S-C-SOCIEDAD Y CULTURA-CD",
+      "nombre": "TAREA: TRABAJO FIN PRIMER PERIODO RESUMEN LIBRO (AA)",
+      "fecha": "21 de noviembre de 2025",
+      "hora": "23:59",
+      "fechaISO": "2025-11-22T04:59:00.000Z",
+      "tiempoRestante": "8 días",
+      "diasRestantes": 8,
+      "estado": "Pendiente",
+      "url": "https://moodle.unach.edu.ec/mod/assign/view.php?id=273774"
+    }
+  ],
+  "ultimaActualizacion": "2025-11-13T20:03:31.908Z"
+}
