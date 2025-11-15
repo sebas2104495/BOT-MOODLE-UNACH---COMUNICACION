@@ -1,8 +1,18 @@
 const TelegramBot = require('node-telegram-bot-api');
 const schedule = require('node-schedule');
 const puppeteer = require('puppeteer');
-const chromium = require('@sparticuz/chromium');
 const fs = require('fs');
+const http = require('http');
+
+// Servidor HTTP para Railway
+const PORT = process.env.PORT || 3000;
+const server = http.createServer((req, res) => {
+    res.writeHead(200, { 'Content-Type': 'text/plain' });
+    res.end('Bot de Telegram activo ✅\n');
+});
+server.listen(PORT, () => {
+    console.log(`🌐 Servidor HTTP escuchando en puerto ${PORT}`);
+});
 
 // ========== CONFIGURACIÓN ==========
 const CONFIG = {
@@ -52,20 +62,11 @@ async function obtenerTareasDeMoodle() {
     console.log('⚡ Extrayendo tareas desde Moodle...');
 
     const browser = await puppeteer.launch({
-        headless: 'new',
-        executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || '/usr/bin/chromium',
-        args: [
-            '--no-sandbox',
-            '--disable-setuid-sandbox',
-            '--disable-dev-shm-usage',
-            '--disable-gpu',
-            '--disable-software-rasterizer',
-            '--disable-extensions',
-            '--disable-web-security',
-            '--disable-features=IsolateOrigins,site-per-process',
-            '--single-process',
-            '--no-zygote'
-        ]
+        args: chromium.args,
+        defaultViewport: chromium.defaultViewport,
+        executablePath: await chromium.executablePath(),
+        headless: chromium.headless,
+        ignoreHTTPSErrors: true
     });
 
     try {
