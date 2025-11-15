@@ -1,18 +1,18 @@
 {
-  "name": "moodle-telegram-bot",
+  "name": "bot-telegram-moodle",
   "version": "1.0.0",
-  "description": "Bot de Telegram para notificaciones de Moodle UNACH",
-  "main": "bot-telegram.js",
+  "description": "",
+  "main": "index.js",
   "scripts": {
-    "start": "node bot-telegram.js"
+    "test": "echo \"Error: no test specified\" && exit 1"
   },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
   "dependencies": {
-    "node-telegram-bot-api": "^0.64.0",
     "node-schedule": "^2.1.1",
-    "puppeteer": "^21.0.0",
-    "@sparticuz/chromium": "^119.0.2"
-  },
-  "engines": {
-    "node": ">=18.0.0"
+    "node-telegram-bot-api": "^0.66.0",
+    "puppeteer": "^24.30.0"
   }
 }
