@@ -1,6 +1,7 @@
 const TelegramBot = require('node-telegram-bot-api');
 const schedule = require('node-schedule');
 const puppeteer = require('puppeteer');
+const chromium = require('@sparticuz/chromium');
 const fs = require('fs');
 
 // ========== CONFIGURACIÓN ==========
@@ -51,8 +52,8 @@ async function obtenerTareasDeMoodle() {
     console.log('⚡ Extrayendo tareas desde Moodle...');
 
     const browser = await puppeteer.launch({
-        headless: true,
-        executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || '/usr/bin/chromium-browser',
+        headless: 'new',
+        executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || '/usr/bin/chromium',
         args: [
             '--no-sandbox',
             '--disable-setuid-sandbox',
@@ -62,7 +63,8 @@ async function obtenerTareasDeMoodle() {
             '--disable-extensions',
             '--disable-web-security',
             '--disable-features=IsolateOrigins,site-per-process',
-            '--single-process'
+            '--single-process',
+            '--no-zygote'
         ]
     });
 
