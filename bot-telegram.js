@@ -64,6 +64,9 @@ async function obtenerTareasDeMoodle() {
 
     const browser = await puppeteer.launch({
         headless: 'new',
+        executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || 
+                       process.env.CHROME_BIN || 
+                       puppeteer.executablePath(),
         args: [
             '--no-sandbox',
             '--disable-setuid-sandbox',
@@ -72,7 +75,9 @@ async function obtenerTareasDeMoodle() {
             '--disable-software-rasterizer',
             '--disable-extensions',
             '--single-process',
-            '--no-zygote'
+            '--no-zygote',
+            '--disable-web-security',
+            '--disable-features=IsolateOrigins,site-per-process'
         ]
     });
 
