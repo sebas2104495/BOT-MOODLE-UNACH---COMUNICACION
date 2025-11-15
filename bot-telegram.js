@@ -1,14 +1,10 @@
-bot.onText(/\/start/, (msg) => {
-    const chatId = msg.chat.id;
-    bot.sendMessage(chatId,
-        `👋 <b>¡Bienvenido al Bot de Moodle UNACH!</b>\n\n` +
-        `const TelegramBot = require('node-telegram-bot-api');
+const TelegramBot = require('node-telegram-bot-api');
 const schedule = require('node-schedule');
 const puppeteer = require('puppeteer');
 const fs = require('fs');
 const http = require('http');
 
-// Servidor HTTP para Railway
+// ========== SERVIDOR HTTP PARA RAILWAY ==========
 const PORT = process.env.PORT || 3000;
 const server = http.createServer((req, res) => {
     res.writeHead(200, { 'Content-Type': 'text/plain' });
@@ -20,10 +16,10 @@ server.listen(PORT, () => {
 
 // ========== CONFIGURACIÓN ==========
 const CONFIG = {
-    telegramToken: '8508871696:AAHVgoFh-vecqUZ_wcpplSy2pcQjMMs7cJg',
-    chatId: '6569332546',
-    microsoftEmail: 'jakob.ponce@unach.edu.ec',
-    microsoftPass: 'Sebas2104',
+    telegramToken: process.env.TELEGRAM_TOKEN || '8508871696:AAHVgoFh-vecqUZ_wcpplSy2pcQjMMs7cJg',
+    chatId: process.env.CHAT_ID || '6569332546',
+    microsoftEmail: process.env.MS_EMAIL || 'jakob.ponce@unach.edu.ec',
+    microsoftPass: process.env.MS_PASSWORD || 'Sebas2104',
     moodleUrl: 'https://moodle.unach.edu.ec',
 };
 
@@ -55,6 +51,7 @@ function guardarTareas(tareas) {
             tareas,
             ultimaActualizacion: new Date().toISOString()
         }, null, 2));
+        ultimaActualizacion = new Date();
     } catch (error) {
         console.error('Error al guardar tareas:', error);
     }
@@ -324,7 +321,7 @@ async function obtenerTareasDeMoodle() {
 // ========== ACTUALIZAR TAREAS ==========
 async function actualizarTareas() {
     try {
-        console.log('\n🔄 Actualizando tareas...');
+        console.log('\n🔄 Obteniendo tareas en tiempo real...');
         const tareasNuevas = await obtenerTareasDeMoodle();
 
         if (tareasNuevas.length === 0) {
@@ -344,7 +341,6 @@ async function actualizarTareas() {
 
         tareasActuales = tareasNuevas;
         guardarTareas(tareasActuales);
-        ultimaActualizacion = new Date();
 
         console.log(`✅ ${tareasAgregadas.length} nuevas, ${tareasNuevas.length} total`);
 
@@ -465,35 +461,36 @@ function formatearMensajeNuevas(tareasNuevas) {
 
 // ========== COMANDOS DE TELEGRAM ==========
 
-// Comando /start - Bienvenida mejorada
+// Comando /start
 bot.onText(/\/start/, (msg) => {
     const chatId = msg.chat.id;
     bot.sendMessage(chatId,
         `👋 <b>¡Bienvenido al Bot de Moodle UNACH!</b>\n\n` +
         `🎓 Este bot te ayuda a mantenerte al día con tus deberes universitarios.\n\n` +
-        `📋 <b>Estos son los comandos que puedes utilizar:</b>\n\n` +
-        `📚 /tareas - <i>Ver todos tus deberes pendientes</i>\n` +
-        `🔄 /actualizar - <i>Actualizar el servicio y buscar nuevos deberes</i>\n` +
-        `🔥 /urgentes - <i>Ver solo deberes urgentes (hoy y mañana)</i>\n` +
+        `📋 <b>Comandos disponibles:</b>\n\n` +
+        `📚 /tareas - <i>Ver todos tus deberes en tiempo real</i>\n` +
+        `🔥 /urgentes - <i>Ver solo deberes urgentes</i>\n` +
         `📅 /proximos - <i>Ver deberes de esta semana</i>\n` +
-        `❌ /vencidos - <i>Ver deberes que ya pasaron de fecha</i>\n` +
-        `ℹ️ /estado - <i>Ver estado del bot y última actualización</i>\n` +
-        `❓ /ayuda - <i>Servicio de ayuda y soporte</i>\n\n` +
+        `❌ /vencidos - <i>Ver deberes vencidos</i>\n` +
+        `ℹ️ /estado - <i>Ver estado del bot</i>\n` +
+        `❓ /ayuda - <i>Servicio de ayuda</i>\n\n` +
         `━━━━━━━━━━━━━━━━━\n` +
-        `💡 <b>Tip:</b> El bot se actualiza automáticamente cada 15 minutos y te notifica cuando hay nuevos deberes.\n\n` +
+        `💡 <b>Tip:</b> Cada vez que uses /tareas, el bot consulta Moodle en tiempo real para traerte la información más actualizada.\n\n` +
         `<b>Chat ID:</b> <code>${chatId}</code>`,
         { parse_mode: 'HTML' }
     );
 });
 
-// Comando /tareas - Ver todos los deberes (actualiza automáticamente)
+// Comando /tareas - Ver todos los deberes EN TIEMPO REAL
 bot.onText(/\/tareas/, async (msg) => {
     const chatId = msg.chat.id;
     
-    // Actualizar automáticamente antes de mostrar
     try {
-        await bot.sendMessage(chatId, '🔄 Obteniendo tus deberes...');
+        const mensaje = await bot.sendMessage(chatId, '🔄 Consultando Moodle en tiempo real...\n⏳ Esto puede tomar 15-30 segundos...');
+        
         await actualizarTareas();
+        
+        await bot.deleteMessage(chatId, mensaje.message_id);
         await bot.sendMessage(chatId, formatearMensajeTareas(tareasActuales), {
             parse_mode: 'HTML',
             disable_web_page_preview: true
@@ -503,96 +500,129 @@ bot.onText(/\/tareas/, async (msg) => {
     }
 });
 
-// Comando /urgentes - Solo deberes urgentes
+// Comando /urgentes - Solo deberes urgentes EN TIEMPO REAL
 bot.onText(/\/urgentes/, async (msg) => {
     const chatId = msg.chat.id;
-    const urgentes = tareasActuales.filter(t => t.estado === 'Urgente');
     
-    if (urgentes.length === 0) {
-        await bot.sendMessage(chatId, 
-            '✅ <b>¡Genial!</b>\n\nNo tienes deberes urgentes por ahora 😊', 
-            { parse_mode: 'HTML' }
-        );
-        return;
-    }
-
-    let mensaje = '🔥 <b>DEBERES URGENTES</b>\n\n';
-    urgentes.forEach(t => {
-        let textoTiempo = t.diasRestantes === 0 ? 
-            `Tienes que entregar <b>HOY</b> hasta las ${t.hora}` : 
-            `Tienes que entregar <b>MAÑANA</b> hasta las ${t.hora}`;
+    try {
+        const mensaje = await bot.sendMessage(chatId, '🔄 Consultando deberes urgentes...');
         
-        mensaje += `🔥 <b>${t.nombre}</b>\n`;
-        mensaje += `   Materia: ${t.materia}\n`;
-        mensaje += `   ${textoTiempo}\n`;
-        mensaje += `   <a href="${t.url}">Ver en Moodle</a>\n\n`;
-    });
+        await actualizarTareas();
+        
+        await bot.deleteMessage(chatId, mensaje.message_id);
+        
+        const urgentes = tareasActuales.filter(t => t.estado === 'Urgente');
+        
+        if (urgentes.length === 0) {
+            await bot.sendMessage(chatId, 
+                '✅ <b>¡Genial!</b>\n\nNo tienes deberes urgentes por ahora 😊', 
+                { parse_mode: 'HTML' }
+            );
+            return;
+        }
 
-    await bot.sendMessage(chatId, mensaje, {
-        parse_mode: 'HTML',
-        disable_web_page_preview: true
-    });
+        let mensajeUrgentes = '🔥 <b>DEBERES URGENTES</b>\n\n';
+        urgentes.forEach(t => {
+            let textoTiempo = t.diasRestantes === 0 ? 
+                `Tienes que entregar <b>HOY</b> hasta las ${t.hora}` : 
+                `Tienes que entregar <b>MAÑANA</b> hasta las ${t.hora}`;
+            
+            mensajeUrgentes += `🔥 <b>${t.nombre}</b>\n`;
+            mensajeUrgentes += `   Materia: ${t.materia}\n`;
+            mensajeUrgentes += `   ${textoTiempo}\n`;
+            mensajeUrgentes += `   <a href="${t.url}">Ver en Moodle</a>\n\n`;
+        });
+
+        await bot.sendMessage(chatId, mensajeUrgentes, {
+            parse_mode: 'HTML',
+            disable_web_page_preview: true
+        });
+    } catch (error) {
+        await bot.sendMessage(chatId, `❌ Error: ${error.message}`);
+    }
 });
 
-// Comando /proximos - Deberes de esta semana
+// Comando /proximos - Deberes de esta semana EN TIEMPO REAL
 bot.onText(/\/proximos/, async (msg) => {
     const chatId = msg.chat.id;
-    const proximos = tareasActuales.filter(t => 
-        t.estado === 'Próximo' || t.estado === 'Esta semana' || t.estado === 'Pendiente'
-    );
     
-    if (proximos.length === 0) {
-        await bot.sendMessage(chatId, 
-            '✅ <b>¡Todo listo!</b>\n\nNo tienes deberes próximos 🎉', 
-            { parse_mode: 'HTML' }
+    try {
+        const mensaje = await bot.sendMessage(chatId, '🔄 Consultando próximos deberes...');
+        
+        await actualizarTareas();
+        
+        await bot.deleteMessage(chatId, mensaje.message_id);
+        
+        const proximos = tareasActuales.filter(t => 
+            t.estado === 'Próximo' || t.estado === 'Esta semana' || t.estado === 'Pendiente'
         );
-        return;
+        
+        if (proximos.length === 0) {
+            await bot.sendMessage(chatId, 
+                '✅ <b>¡Todo listo!</b>\n\nNo tienes deberes próximos 🎉', 
+                { parse_mode: 'HTML' }
+            );
+            return;
+        }
+
+        let mensajeProximos = '📅 <b>PRÓXIMOS DEBERES</b>\n\n';
+        proximos.forEach(t => {
+            let emoji = t.estado === 'Próximo' ? '⚠️' : '📌';
+            mensajeProximos += `${emoji} <b>${t.nombre}</b>\n`;
+            mensajeProximos += `   Materia: ${t.materia}\n`;
+            mensajeProximos += `   Entregar: <b>${t.fecha}</b> a las ${t.hora}\n`;
+            mensajeProximos += `   Faltan: ${t.tiempoRestante}\n`;
+            mensajeProximos += `   <a href="${t.url}">Ver en Moodle</a>\n\n`;
+        });
+
+        await bot.sendMessage(chatId, mensajeProximos, {
+            parse_mode: 'HTML',
+            disable_web_page_preview: true
+        });
+    } catch (error) {
+        await bot.sendMessage(chatId, `❌ Error: ${error.message}`);
     }
-
-    let mensaje = '📅 <b>PRÓXIMOS DEBERES</b>\n\n';
-    proximos.forEach(t => {
-        let emoji = t.estado === 'Próximo' ? '⚠️' : '📌';
-        mensaje += `${emoji} <b>${t.nombre}</b>\n`;
-        mensaje += `   Materia: ${t.materia}\n`;
-        mensaje += `   Entregar: <b>${t.fecha}</b> a las ${t.hora}\n`;
-        mensaje += `   Faltan: ${t.tiempoRestante}\n`;
-        mensaje += `   <a href="${t.url}">Ver en Moodle</a>\n\n`;
-    });
-
-    await bot.sendMessage(chatId, mensaje, {
-        parse_mode: 'HTML',
-        disable_web_page_preview: true
-    });
 });
 
-// Comando /vencidos - Deberes vencidos
+// Comando /vencidos - Deberes vencidos EN TIEMPO REAL
 bot.onText(/\/vencidos/, async (msg) => {
     const chatId = msg.chat.id;
-    const vencidos = tareasActuales.filter(t => t.estado === 'Vencido');
     
-    if (vencidos.length === 0) {
-        await bot.sendMessage(chatId, 
-            '✅ <b>¡Excelente!</b>\n\nNo tienes deberes vencidos 👏', 
-            { parse_mode: 'HTML' }
-        );
-        return;
+    try {
+        const mensaje = await bot.sendMessage(chatId, '🔄 Consultando deberes vencidos...');
+        
+        await actualizarTareas();
+        
+        await bot.deleteMessage(chatId, mensaje.message_id);
+        
+        const vencidos = tareasActuales.filter(t => t.estado === 'Vencido');
+        
+        if (vencidos.length === 0) {
+            await bot.sendMessage(chatId, 
+                '✅ <b>¡Excelente!</b>\n\nNo tienes deberes vencidos 👏', 
+                { parse_mode: 'HTML' }
+            );
+            return;
+        }
+
+        let mensajeVencidos = `❌ <b>DEBERES VENCIDOS (${vencidos.length})</b>\n\n`;
+        vencidos.forEach(t => {
+            mensajeVencidos += `⏰ <b>${t.nombre}</b>\n`;
+            mensajeVencidos += `   Materia: ${t.materia}\n`;
+            mensajeVencidos += `   ${t.tiempoRestante}\n`;
+            mensajeVencidos += `   <a href="${t.url}">Ver en Moodle</a>\n\n`;
+        });
+
+        await bot.sendMessage(chatId, mensajeVencidos, {
+            parse_mode: 'HTML',
+            disable_web_page_preview: true
+        });
+    } catch (error) {
+        await bot.sendMessage(chatId, `❌ Error: ${error.message}`);
     }
-
-    let mensaje = `❌ <b>DEBERES VENCIDOS (${vencidos.length})</b>\n\n`;
-    vencidos.forEach(t => {
-        mensaje += `⏰ <b>${t.nombre}</b>\n`;
-        mensaje += `   Materia: ${t.materia}\n`;
-        mensaje += `   ${t.tiempoRestante}\n`;
-        mensaje += `   <a href="${t.url}">Ver en Moodle</a>\n\n`;
-    });
-
-    await bot.sendMessage(chatId, mensaje, {
-        parse_mode: 'HTML',
-        disable_web_page_preview: true
-    });
 });
 
-// Comando /estado - Estado del bot
+// Comando /estado
 bot.onText(/\/estado/, async (msg) => {
     const chatId = msg.chat.id;
     
@@ -613,22 +643,22 @@ bot.onText(/\/estado/, async (msg) => {
     mensaje += `   📌 Próximos: ${proximos}\n`;
     mensaje += `   ❌ Vencidos: ${vencidos}\n`;
     mensaje += `   📚 Total: ${tareasActuales.length}\n\n`;
-    mensaje += `🕐 <b>Última actualización:</b>\n   ${ultimaAct}\n\n`;
-    mensaje += `⚙️ <b>Configuración:</b>\n`;
-    mensaje += `   • Actualización automática: Cada 15 min\n`;
+    mensaje += `🕐 <b>Última consulta:</b>\n   ${ultimaAct}\n\n`;
+    mensaje += `⚙️ <b>Modo de operación:</b>\n`;
+    mensaje += `   • Consulta en tiempo real al usar comandos\n`;
+    mensaje += `   • Actualización automática cada 15 min\n`;
     mensaje += `   • Recordatorio matutino: 8:00 AM`;
 
     await bot.sendMessage(chatId, mensaje, { parse_mode: 'HTML' });
 });
 
-// Comando /ayuda - Servicio de ayuda
+// Comando /ayuda
 bot.onText(/\/ayuda/, (msg) => {
     const chatId = msg.chat.id;
     bot.sendMessage(chatId,
         `❓ <b>SERVICIO DE AYUDA</b>\n\n` +
         `<b>Comandos disponibles:</b>\n\n` +
-        `📚 /tareas - Ver todos tus deberes\n` +
-        `🔄 /actualizar - Actualizar el servicio ahora\n` +
+        `📚 /tareas - Ver todos tus deberes en tiempo real\n` +
         `🔥 /urgentes - Ver solo deberes urgentes\n` +
         `📅 /proximos - Ver deberes próximos\n` +
         `❌ /vencidos - Ver deberes vencidos\n` +
@@ -636,13 +666,14 @@ bot.onText(/\/ayuda/, (msg) => {
         `❓ /ayuda - Esta ayuda\n\n` +
         `━━━━━━━━━━━━━━━━━\n\n` +
         `<b>¿Cómo funciona?</b>\n` +
-        `• El bot revisa Moodle cada 15 minutos\n` +
+        `• Cada comando consulta Moodle en tiempo real\n` +
+        `• El bot también revisa automáticamente cada 15 min\n` +
         `• Te notifica cuando hay nuevos deberes\n` +
         `• Recibes un recordatorio diario a las 8 AM\n\n` +
+        `<b>💡 Tip:</b>\n` +
+        `Los comandos tardan 15-30 segundos porque el bot accede a Moodle en tiempo real para traerte información actualizada.\n\n` +
         `<b>¿Problemas?</b>\n` +
-        `Si el bot no responde, prueba usar /actualizar para forzar una actualización.\n\n` +
-        `<b>Contacto:</b>\n` +
-        `Para soporte técnico, contacta al administrador del bot.`,
+        `Si el bot no responde, verifica que el servidor esté activo o contacta al administrador.`,
         { parse_mode: 'HTML' }
     );
 });
@@ -650,7 +681,7 @@ bot.onText(/\/ayuda/, (msg) => {
 // ========== PROGRAMACIÓN ==========
 function programarActualizaciones() {
     schedule.scheduleJob('*/15 * * * *', async () => {
-        console.log('\n⏰ Actualización automática...');
+        console.log('\n⏰ Actualización automática cada 15 minutos...');
         try {
             const resultado = await actualizarTareas();
 
@@ -659,21 +690,24 @@ function programarActualizaciones() {
                     parse_mode: 'HTML',
                     disable_web_page_preview: true
                 });
-                console.log('✅ Notificación enviada');
+                console.log('✅ Notificación de nuevos deberes enviada');
             }
         } catch (error) {
-            console.error('Error:', error.message);
+            console.error('Error en actualización automática:', error.message);
         }
     });
 
-    console.log('✅ Actualizaciones cada 15min');
+    console.log('✅ Actualizaciones automáticas programadas cada 15 minutos');
 }
 
 function programarRecordatorios() {
     schedule.scheduleJob('0 8 * * *', async () => {
-        console.log('🔔 Recordatorio matutino...');
+        console.log('🔔 Enviando recordatorio matutino...');
 
         try {
+            // Obtener datos actualizados para el recordatorio
+            await actualizarTareas();
+
             const vencidos = tareasActuales.filter(t => t.estado === 'Vencido');
             const urgentes = tareasActuales.filter(t => t.estado === 'Urgente');
             const proximos = tareasActuales.filter(t => t.estado === 'Próximo');
@@ -705,37 +739,63 @@ function programarRecordatorios() {
                 mensaje += 'Escribe /tareas para ver todos los detalles';
 
                 await bot.sendMessage(CONFIG.chatId, mensaje, { parse_mode: 'HTML' });
-                console.log('✅ Recordatorio enviado');
+                console.log('✅ Recordatorio matutino enviado');
+            } else {
+                await bot.sendMessage(CONFIG.chatId, 
+                    '☀️ <b>¡Buenos días!</b>\n\n✅ ¡Todo al día! No tienes deberes pendientes 🎉', 
+                    { parse_mode: 'HTML' }
+                );
             }
         } catch (error) {
-            console.error('Error:', error);
+            console.error('Error al enviar recordatorio:', error);
         }
     });
 
-    console.log('✅ Recordatorios 8 AM');
+    console.log('✅ Recordatorio matutino programado a las 8:00 AM');
 }
 
-// ========== INICIAR ==========
-console.log('🚀 Iniciando bot de Telegram...');
+// ========== INICIAR BOT ==========
+console.log('🚀 Iniciando Bot de Telegram para Moodle UNACH...');
+console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+
 cargarTareas();
 
+// Esperar 3 segundos y luego iniciar
 setTimeout(async () => {
     try {
+        console.log('\n🔄 Realizando primera consulta a Moodle...');
         await actualizarTareas();
 
         if (CONFIG.chatId !== 'TU_CHAT_ID') {
-            await bot.sendMessage(CONFIG.chatId, formatearMensajeTareas(tareasActuales), {
-                parse_mode: 'HTML',
-                disable_web_page_preview: true
-            });
-            console.log('✅ Mensaje inicial enviado');
+            await bot.sendMessage(CONFIG.chatId, 
+                '🤖 <b>Bot iniciado correctamente</b>\n\n' +
+                formatearMensajeTareas(tareasActuales), 
+                {
+                    parse_mode: 'HTML',
+                    disable_web_page_preview: true
+                }
+            );
+            console.log('✅ Mensaje inicial enviado al usuario');
         }
     } catch (error) {
-        console.error('⚠️ Error:', error.message);
+        console.error('⚠️ Error en inicialización:', error.message);
     }
 
+    // Programar tareas automáticas
     programarActualizaciones();
     programarRecordatorios();
+    
+    console.log('\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    console.log('✅ Bot completamente operativo');
+    console.log('💡 Todos los comandos consultan Moodle en tiempo real');
+    console.log('⏰ Actualización automática cada 15 minutos');
+    console.log('🔔 Recordatorio diario a las 8:00 AM');
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
 }, 3000);
 
-console.log('✅ Bot iniciado correctamente');
+// Manejo de errores global
+bot.on('polling_error', (error) => {
+    console.error('❌ Error de polling:', error.message);
+});
+
+console.log('✅ Bot de Telegram configurado correctamente');
