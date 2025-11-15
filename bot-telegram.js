@@ -1,4 +1,8 @@
-const TelegramBot = require('node-telegram-bot-api');
+bot.onText(/\/start/, (msg) => {
+    const chatId = msg.chat.id;
+    bot.sendMessage(chatId,
+        `👋 <b>¡Bienvenido al Bot de Moodle UNACH!</b>\n\n` +
+        `const TelegramBot = require('node-telegram-bot-api');
 const schedule = require('node-schedule');
 const puppeteer = require('puppeteer');
 const fs = require('fs');
@@ -482,28 +486,20 @@ bot.onText(/\/start/, (msg) => {
     );
 });
 
-// Comando /tareas - Ver todos los deberes
+// Comando /tareas - Ver todos los deberes (actualiza automáticamente)
 bot.onText(/\/tareas/, async (msg) => {
     const chatId = msg.chat.id;
-    await bot.sendMessage(chatId, formatearMensajeTareas(tareasActuales), {
-        parse_mode: 'HTML',
-        disable_web_page_preview: true
-    });
-});
-
-// Comando /actualizar - Actualizar manualmente
-bot.onText(/\/actualizar/, async (msg) => {
-    const chatId = msg.chat.id;
-    await bot.sendMessage(chatId, '🔄 Actualizando el servicio...');
-
+    
+    // Actualizar automáticamente antes de mostrar
     try {
+        await bot.sendMessage(chatId, '🔄 Obteniendo tus deberes...');
         await actualizarTareas();
         await bot.sendMessage(chatId, formatearMensajeTareas(tareasActuales), {
             parse_mode: 'HTML',
             disable_web_page_preview: true
         });
     } catch (error) {
-        await bot.sendMessage(chatId, `❌ Error: ${error.message}`);
+        await bot.sendMessage(chatId, `❌ Error al obtener deberes: ${error.message}`);
     }
 });
 
