@@ -62,11 +62,17 @@ async function obtenerTareasDeMoodle() {
     console.log('⚡ Extrayendo tareas desde Moodle...');
 
     const browser = await puppeteer.launch({
-        args: chromium.args,
-        defaultViewport: chromium.defaultViewport,
-        executablePath: await chromium.executablePath(),
-        headless: chromium.headless,
-        ignoreHTTPSErrors: true
+        headless: 'new',
+        args: [
+            '--no-sandbox',
+            '--disable-setuid-sandbox',
+            '--disable-dev-shm-usage',
+            '--disable-gpu',
+            '--disable-software-rasterizer',
+            '--disable-extensions',
+            '--single-process',
+            '--no-zygote'
+        ]
     });
 
     try {
