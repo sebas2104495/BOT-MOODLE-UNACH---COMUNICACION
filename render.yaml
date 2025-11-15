@@ -1,8 +1,16 @@
 services:
   - type: web
-    name: bot-telegram-moodle
+    name: moodle-telegram-bot
     env: node
     plan: free
-    region: oregon
-    buildCommand: npm install && npx puppeteer browsers install chrome
+    buildCommand: |
+      npm install
+      npm install -g puppeteer
+      npx puppeteer browsers install chrome
     startCommand: node bot-telegram.js
+    envVars:
+      - key: PUPPETEER_SKIP_CHROMIUM_DOWNLOAD
+        value: false
+      - key: PUPPETEER_EXECUTABLE_PATH
+        value: /opt/render/.cache/puppeteer/chrome/linux-131.0.6778.204/chrome-linux64/chrome
+    autoDeploy: true
